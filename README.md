@@ -53,5 +53,5 @@ The goal is to help users improve their typing speed, accuracy, and consistency 
 
 ### 1️⃣ Clone or Download
 ```bash
-git clone https://github.com/<your-username>/TypingPracticeApp.git
+git clone https://github.com/bilalegl/TypingPracticeApp.git
 cd TypingPracticeApp
