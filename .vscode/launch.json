@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run TypingPracticeApp",
+            "request": "launch",
+            "mainClass": "application.Main",
+            "vmArgs": "--module-path \"C:/Users/bilal/OneDrive/Desktop/TypingPracticeApp/lib\" --add-modules javafx.controls,javafx.fxml,javafx.graphics"
+        }
+    ]
+}
