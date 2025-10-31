@@ -1,32 +1,34 @@
-# Typing Practice App (JavaFX)
+# 🧠 Typing Practice App (JavaFX)
 
 A simple yet feature-rich **offline Typing Practice App** built completely in **JavaFX (no FXML)** using pure Java code.  
-The goal is to help users improve their typing speed, accuracy, and consistency — all in real time.
+The goal is to help users improve their **typing speed**, **accuracy**, and **consistency** — all in real time.
 
 ---
 
 ## 🚧 Project Status
 ✅ **Currently Working On:**  
 - Real-time typing test  
-- Per-character feedback (Green for correct, Red for wrong)  
-- Blinking cursor (under active letter)  
+- Word-by-word accuracy tracking (Green = correct, Red = incorrect)  
+- Difficulty levels (**Easy / Medium / Hard**)  
 - Timer, WPM, and Accuracy tracking  
+- Local CSV-based progress saving  
+- Performance visualization using charts  
 
-🧩 **Next Planned Features:**
-- Difficulty modes (Easy / Medium / Hard)
-- Sentence randomization (from offline text file)
-- Progress saving and result history
-- Charts for performance visualization
-- Multi-session statistics dashboard
+🧩 **Next Planned Features:**  
+- Sentence typing mode  
+- Multi-session statistics dashboard  
+- Progress analytics and leaderboard  
+- Custom test durations and UI themes  
 
 ---
 
-## 🖥️ Current UI Preview (Stage 1)
-- Dark background with cyan title  
-- Sentence display using `TextFlow`
-- Typing input handled via `KeyTyped` events (no text box)
-- Blinking cyan cursor below the active character
-- Real-time WPM and Accuracy updates
+## 🖥️ Current UI Preview (Stage 2)
+- Dark gradient background with cyan title  
+- Word display using `Label`  
+- Input handled via `TextField` (auto-cleared per word)  
+- Real-time WPM and Accuracy updates  
+- Difficulty selector and Start button  
+- “View Progress” button showing performance chart  
 
 ---
 
@@ -39,19 +41,54 @@ The goal is to help users improve their typing speed, accuracy, and consistency 
 
 ---
 
-## 🧠 How It Works (Current Stage)
-1. Click **Start Test** to begin.
-2. The app shows a predefined sentence (offline).
-3. Type directly — letters turn **green** if correct or **red** if wrong.
-4. The cursor blinks under the current character.
-5. When the sentence is complete, the test stops and shows:
-   - **WPM (Words Per Minute)**
-   - **Accuracy %**
-   - **Elapsed Time**
+## 🧠 How It Works
+1️⃣ Click **Start Test** to begin.  
+2️⃣ Choose your **difficulty level** — Easy, Medium, or Hard.  
+3️⃣ The app shows a random word from the offline word file (`data/words.txt`).  
+4️⃣ Type the word correctly to earn points — next word appears instantly.  
+5️⃣ The timer runs based on difficulty:  
+   - Easy = 60s  
+   - Medium = 45s  
+   - Hard = 30s  
+6️⃣ When time runs out, you’ll see:  
+   - **WPM (Words Per Minute)**  
+   - **Accuracy %**  
+7️⃣ All test results are saved automatically in `results/history.csv`.  
+8️⃣ You can view your past performance anytime via the **Progress Chart**.
 
-## 🚀 How to Run
+---
 
-### 1️⃣ Clone or Download
-```bash
+## 📊 Example Result File (`results/history.csv`)
+```csv
+DateTime,WPM,Accuracy
+2025-11-01 14:23:15,42,95.83
+2025-11-01 14:27:09,51,97.00
+```
+
+#Project Structure
+TypingPracticeApp/
+├── src/application/
+│   ├── Main.java
+│   ├── TypingApp.java
+│   ├── WordManager.java
+│   ├── ResultManager.java
+│   └── ChartManager.java
+├── data/
+│   └── words.txt
+├── results/
+│   └── history.csv
+└── README.md
+
 git clone https://github.com/bilalegl/TypingPracticeApp.git
 cd TypingPracticeApp
+
+javac --module-path "path-to-javafx-lib" --add-modules javafx.controls,javafx.fxml src/application/*.java
+java --module-path "path-to-javafx-lib" --add-modules javafx.controls,javafx.fxml application.Main
+
+#👨‍💻 Author
+
+Muhammad Bilal
+Software Engineering Student | Java Developer
+
+2025-11-01 14:23:15,42,95.83
+2025-11-01 14:27:09,51,97.00
