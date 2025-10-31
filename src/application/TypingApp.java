@@ -1,7 +1,6 @@
 package application;
 
-import javafx.animation.AnimationTimer;
-import javafx.geometry.Insets;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -9,142 +8,145 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import javafx.stage.Stage;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class TypingApp {
-
-    private TextFlow sentenceFlow;
-    private Label timerLabel, wpmLabel, accuracyLabel;
+    private Label wordLabel;
+    private TextField inputField;
+    private Label timerLabel;
+    private Label wpmLabel;
+    private Label accuracyLabel;
     private ComboBox<String> difficultyBox;
-    private Button startButton;
 
-    private String sentence;
-    private int currentIndex = 0;
-    private int totalTyped = 0;
-    private int correctTyped = 0;
+    private WordManager wordManager;
+    private ResultManager resultManager;
+    private ChartManager chartManager;
 
-    private long startTime;
-    private boolean testRunning = false;
-    private AnimationTimer timer;
+    private int correctWords = 0;
+    private int totalWords = 0;
+    private int timeLeft = 60;
+    private Timer timer;
 
-    public void start(Stage stage) {
+    public TypingApp(Stage stage) {
+        wordManager = new WordManager("data/words.txt");
+        resultManager = new ResultManager("results/history.csv");
+        chartManager = new ChartManager(resultManager);
+
         VBox root = new VBox(15);
-        root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #1E1E2F;");
+        root.setStyle("-fx-padding: 30; -fx-background-color: linear-gradient(to bottom, #1e1e2f, #282845);");
 
-        Label title = new Label("Typing Practice App (UI Test)");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-        title.setTextFill(Color.CYAN);
+        Label title = new Label("Typing Practice App");
+        title.setFont(Font.font("Consolas", FontWeight.BOLD, 36));
+        title.setTextFill(Color.LIGHTBLUE);
 
-        difficultyBox = new ComboBox<>();
-        difficultyBox.getItems().addAll("Easy", "Medium", "Hard");
-        difficultyBox.setValue("Easy");
+        wordLabel = new Label("Press Start to Begin!");
+        wordLabel.setTextFill(Color.WHITE);
+        wordLabel.setFont(Font.font("Consolas", FontWeight.BOLD, 40));
 
-        sentenceFlow = new TextFlow();
-        sentenceFlow.setTextAlignment(TextAlignment.CENTER);
-        sentenceFlow.setPrefWidth(700);
+        inputField = new TextField();
+        inputField.setPromptText("Type the word here...");
+        inputField.setFont(Font.font("Consolas", 20));
+        inputField.setAlignment(Pos.CENTER);
+        inputField.setDisable(true);
+        inputField.textProperty().addListener((obs, oldText, newText) -> checkTyping(newText));
 
-        startButton = new Button("Start Test");
-        startButton.setStyle("-fx-font-size: 16px; -fx-background-color: #007ACC; -fx-text-fill: white;");
-
-        HBox buttonBox = new HBox(10, startButton);
-        buttonBox.setAlignment(Pos.CENTER);
-
-        timerLabel = new Label("Time: 0s");
+        timerLabel = new Label("Time: 60s");
+        timerLabel.setTextFill(Color.YELLOW);
         wpmLabel = new Label("WPM: 0");
-        accuracyLabel = new Label("Accuracy: 0%");
-        timerLabel.setTextFill(Color.LIGHTBLUE);
-        wpmLabel.setTextFill(Color.LIGHTBLUE);
+        wpmLabel.setTextFill(Color.LIGHTGREEN);
+        accuracyLabel = new Label("Accuracy: 100%");
         accuracyLabel.setTextFill(Color.LIGHTBLUE);
 
         HBox statsBox = new HBox(20, timerLabel, wpmLabel, accuracyLabel);
         statsBox.setAlignment(Pos.CENTER);
 
-        root.getChildren().addAll(title, difficultyBox, sentenceFlow, buttonBox, statsBox);
+        difficultyBox = new ComboBox<>();
+        difficultyBox.getItems().addAll("Easy", "Medium", "Hard");
+        difficultyBox.setValue("Easy");
+        difficultyBox.setStyle("-fx-font-size: 16px;");
 
-        Scene scene = new Scene(root, 900, 600);
+        Button startButton = new Button("Start Test");
+        startButton.setOnAction(e -> startTest());
+        startButton.setStyle("-fx-background-color: #4caf50; -fx-text-fill: white; -fx-font-size: 18px;");
+
+        Button chartButton = new Button("View Progress");
+        chartButton.setOnAction(e -> chartManager.showChartWindow());
+        chartButton.setStyle("-fx-background-color: #2196f3; -fx-text-fill: white; -fx-font-size: 18px;");
+
+        HBox controlBox = new HBox(20, difficultyBox, startButton, chartButton);
+        controlBox.setAlignment(Pos.CENTER);
+
+        root.getChildren().addAll(title, wordLabel, inputField, statsBox, controlBox);
+
+        Scene scene = new Scene(root, 800, 500);
         stage.setScene(scene);
         stage.setTitle("Typing Practice App");
         stage.show();
-
-        // --- Start button action ---
-        startButton.setOnAction(e -> startTest(scene));
-
-        // --- Typing key events ---
-        scene.setOnKeyTyped(event -> {
-            if (!testRunning) return;
-            if (currentIndex >= sentence.length()) return;
-
-            char typed = event.getCharacter().charAt(0);
-            Text currentChar = (Text) sentenceFlow.getChildren().get(currentIndex);
-            char correctChar = sentence.charAt(currentIndex);
-
-            totalTyped++;
-
-            if (typed == correctChar) {
-                currentChar.setFill(Color.LIMEGREEN);
-                currentIndex++;
-                correctTyped++;
-            } else {
-                currentChar.setFill(Color.RED);
-            }
-
-            updateStats();
-            if (currentIndex == sentence.length()) stopTest();
-        });
     }
 
-    private void startTest(Scene scene) {
-        // Sample offline sentence (later you can load random sentences from file)
-        sentence = "The quick brown fox jumps over the lazy dog.";
+    private void startTest() {
+        correctWords = 0;
+        totalWords = 0;
+        inputField.setDisable(false);
+        inputField.setText("");
+        inputField.requestFocus();
 
-        // Prepare sentence text flow
-        sentenceFlow.getChildren().clear();
-        for (char c : sentence.toCharArray()) {
-            Text t = new Text(String.valueOf(c));
-            t.setStyle("-fx-font-size: 24px;");
-            t.setFill(Color.LIGHTGRAY);
-            sentenceFlow.getChildren().add(t);
-        }
+        String difficulty = difficultyBox.getValue();
+        if (difficulty.equals("Easy")) timeLeft = 60;
+        else if (difficulty.equals("Medium")) timeLeft = 45;
+        else timeLeft = 30;
 
-        // Reset values
-        currentIndex = 0;
-        totalTyped = 0;
-        correctTyped = 0;
-        startButton.setDisable(true);
-        testRunning = true;
-        startTime = System.currentTimeMillis();
-        startTimer();
-        scene.getRoot().requestFocus(); // Focus on scene for typing
-    }
+        timerLabel.setText("Time: " + timeLeft + "s");
+        wordLabel.setText(wordManager.getRandomWord(difficulty));
 
-    private void startTimer() {
-        timer = new AnimationTimer() {
+        if (timer != null) timer.cancel();
+
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
             @Override
-            public void handle(long now) {
-                if (testRunning) {
-                    long elapsed = (System.currentTimeMillis() - startTime) / 1000;
-                    timerLabel.setText("Time: " + elapsed + "s");
-                }
+            public void run() {
+                Platform.runLater(() -> {
+                    timeLeft--;
+                    timerLabel.setText("Time: " + timeLeft + "s");
+                    if (timeLeft <= 0) {
+                        timer.cancel();
+                        endTest();
+                    }
+                });
             }
-        };
-        timer.start();
+        }, 1000, 1000);
     }
 
-    private void stopTest() {
-        testRunning = false;
-        timer.stop();
-        startButton.setDisable(false);
+private void checkTyping(String typed) {
+    String target = wordLabel.getText();
+
+    if (typed.equals(target)) {
+        correctWords++;
+        totalWords++;
+
+        Platform.runLater(() -> inputField.setText("")); // ✅ safe reset
+        wordLabel.setText(wordManager.getRandomWord(difficultyBox.getValue()));
+        wpmLabel.setText("WPM: " + correctWords);
+        accuracyLabel.setText("Accuracy: " + ((correctWords * 100) / totalWords) + "%");
+
+    } else if (typed.length() >= target.length()) {
+        totalWords++;
+
+        Platform.runLater(() -> inputField.setText("")); // ✅ safe reset
+        wordLabel.setText(wordManager.getRandomWord(difficultyBox.getValue()));
+        accuracyLabel.setText("Accuracy: " + ((correctWords * 100) / totalWords) + "%");
     }
+}
 
-    private void updateStats() {
-        long elapsed = (System.currentTimeMillis() - startTime) / 1000;
-        if (elapsed == 0) elapsed = 1;
-        double minutes = elapsed / 60.0;
-        int wpm = (int) ((correctTyped / 5.0) / minutes);
-        double accuracy = totalTyped == 0 ? 0 : (correctTyped * 100.0 / totalTyped);
 
-        wpmLabel.setText("WPM: " + wpm);
-        accuracyLabel.setText(String.format("Accuracy: %.1f%%", accuracy));
+    private void endTest() {
+        inputField.setDisable(true);
+        double accuracy = totalWords == 0 ? 0 : (correctWords * 100.0 / totalWords);
+        resultManager.saveResult(correctWords, accuracy);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION,
+                "Test Over!\nWPM: " + correctWords + "\nAccuracy: " + String.format("%.2f", accuracy) + "%");
+        alert.showAndWait();
     }
 }

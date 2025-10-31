@@ -6,8 +6,7 @@ import javafx.stage.Stage;
 public class Main extends Application {
     @Override
     public void start(Stage stage) {
-        TypingApp app = new TypingApp();
-        app.start(stage);
+        new TypingApp(stage);
     }
 
     public static void main(String[] args) {
